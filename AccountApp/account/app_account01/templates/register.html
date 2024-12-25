@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Register Page</title>
+        {% load static %}
+<style>
+  body {
+    font-family: Arial, sans-serif;
+      margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+      background: #f4f4f4 url('{% static "img/background3.jpg" %}') no-repeat;
+      background-size: cover;
+  }
+  .register-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 300px;
+  }
+  .register-container h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  .register-container input[type="text"],
+  .register-container input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box;
+  }
+  .register-container button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #5cb85c;
+    color: white;
+    cursor: pointer;
+  }
+  .register-container button:hover {
+    background-color: #4cae4c;
+  }
+</style>
+</head>
+<body>
+
+<div class="register-container">
+  <h2>Register</h2>
+  <form action="/enroll/" method="post" >
+      {% csrf_token %}
+      {% for item in form %}
+        <div>
+            <label for="{{ item.id_for_label }}">{{ item.label }}</label>
+            {{ item }}
+            <span style="color: red">{{ item.errors.0 }}</span>
+        </div>
+    {% endfor %}
+    <button type="submit">Register</button>
+  </form>
+</div>
+
+</body>
+</html>

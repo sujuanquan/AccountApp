@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>喵喵记账本</title>
+    <style>
+        table {
+            user-select: none;
+            /* width: 100%; */
+            border-collapse: collapse;
+        }
+        table,
+        th,
+        td {
+            border: 1px solid black;
+        }
+        th,
+        td {
+            padding: 8px;
+            text-align: center;
+        }
+
+        body {
+            background: url('app_account01/static/img/background2.jpg') no-repeat;
+            background-size: cover;
+        }
+    </style>
+</head>
+<body>
+<h1>欢迎, {{ username }}!</h1>
+    <table id="ledgerTable">
+        <thead>
+            <tr>
+                <th style="width: 50px;"><input type="month" id="monthPicker"></th>
+                <th colspan="3">日常开销</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>日期</td>
+                <td>项目</td>
+                <td>支出</td>
+                <td>收入</td>
+            </tr>
+        </tbody>
+        <tfoot>
+            <tr>
+                <td><strong>总和</strong></td>
+                <td id="totalAmount">0</td>
+                <td id="totalExpense">0</td>
+                <td id="totalIncome">0</td>
+            </tr>
+        </tfoot>
+    </table>
+    <script>
+        document.getElementById('monthPicker').addEventListener('change', function () {
+            let selectedDate = new Date(this.value);
+            let year = selectedDate.getFullYear();
+            let month = selectedDate.getMonth();
+            let daysInMonth = new Date(year, month + 1, 0).getDate();
+            let tbody = document.querySelector('#ledgerTable tbody');
+            // 清空现有内容并添加标题行
+            tbody.innerHTML = `
+        <tr>
+            <td>日期</td>
+            <td>项目</td>
+            <td>支出</td>
+            <td>收入</td>
+        </tr> 
+    `;
+            // 为每一天添加行
+            for (let day = 1; day <= daysInMonth; day++) {
+                let newRow = document.createElement('tr');
+                newRow.innerHTML = `
+            <td>${day}</td>
+            <td>
+                <button class="add-item">+</button>
+            </td>
+            <td>0</td>
+            <td>0</td>
+        `;
+                newRow.querySelector('.add-item').addEventListener('click', addItemHandler);
+                tbody.appendChild(newRow);
+            }
+            // 初始化总和
+            updateTotals();
+        });
+        // 添加项目的事件处理函数
+        function addItemHandler() {
+            const newItem = createItemElement({ name: '', expense: '', income: '' });
+            this.parentNode.insertBefore(newItem, this);
+            updateDailyTotals(this.closest('tr'));
+            updateTotals(); // 更新总和
+        }
+        // 创建项目元素的函数
+        function createItemElement(item) {
+            const newItem = document.createElement('div');
+            newItem.innerHTML =  `
+        <select class="type-select">
+                {% for item in type_choice %}
+                    <option value="{{item.0}}">{{item.1}}</option>
+                {% endfor %}
+
+        </select>
+        <select class="type-select">
+                {% for item in way_choice %}
+                    <option value="{{item.0}}">{{item.1}}</option>
+                {% endfor %}
+
+        </select>
+        <input type="number" placeholder="金额" style="width: 70px;" value="${item.expense || item.income || ''}">
+        <button class="remove-item">-</button>
+        <button id = "btnadd",type = "button" class = btn-primary>提交</button>
+    `;
+            // 获取金额输入框和类型选择框
+            const amountInput = newItem.querySelector('input[type="number"]');
+            const typeSelect = newItem.querySelector('.type-select');
+            // 添加事件监听器
+            addEventListeners(amountInput, typeSelect, newItem);
+            // 给“-”按钮添加事件监听
+            newItem.querySelector('.remove-item').addEventListener('click', function () {
+                const row = this.closest('tr');
+                // 弹出确认对话框
+                const confirmDelete = confirm("确定要删除此项目吗？");
+                if (confirmDelete) {
+                    this.parentNode.remove();
+                    updateDailyTotals(row);
+                    updateTotals(); // 更新总和
+                    saveData(); // 保存数据
+                }
+            });
+            return newItem;
+        }
+        // 添加事件监听器的函数
+        function addEventListeners(amountInput, typeSelect, newItem) {
+            // 监听金额输入框的变化
+            amountInput.addEventListener('input', function () {
+                if (typeSelect.value === 'expense' && this.value > 0) {
+                    this.value = -this.value; // 如果选择“支出”且金额为正数，自动转换为负数
+                }
+                updateDailyTotals(newItem.closest('tr')); // 更新每日总和
+                updateTotals(); // 更新总和
+            });
+            // 监听类型选择框的变化
+            typeSelect.addEventListener('change', function () {
+                if (this.value === 'expense') {
+                    // 如果选择“支出”，确保金额为负数
+                    if (amountInput.value > 0) {
+                        amountInput.value = -amountInput.value;
+                    }
+                    amountInput.min = '-999999';
+                    amountInput.max = '0';
+                } else if (this.value === 'income') {
+                    // 如果选择“收入”，确保金额为正数
+                    if (amountInput.value < 0) {
+                        amountInput.value = -amountInput.value;
+                    }
+                    amountInput.min = '0';
+                    amountInput.max = '999999';
+                }
+                updateDailyTotals(newItem.closest('tr')); // 更新每日总和
+                updateTotals(); // 更新总和
+            });
+        }
+        // 更新每日总和的函数
+        function updateDailyTotals(row) {
+            const items = row.querySelectorAll('div');
+            let expenseTotal = 0;
+            let incomeTotal = 0;
+            items.forEach(item => {
+                const amountInput = item.querySelector('input[type="number"]');
+                const amount = parseFloat(amountInput.value) || 0;
+                if (amount < 0) {
+                    expenseTotal += amount;
+                } else {
+                    incomeTotal += amount;
+                }
+            });
+            row.querySelectorAll('td')[2].textContent = expenseTotal;
+            row.querySelectorAll('td')[3].textContent = incomeTotal;
+        }
+        // 更新总和的函数
+        function updateTotals() {
+            const rows = document.querySelectorAll('#ledgerTable tbody tr');
+            let totalExpense = 0;
+            let totalIncome = 0;
+            rows.forEach(row => {
+                const expenseCell = row.querySelectorAll('td')[2];
+                const incomeCell = row.querySelectorAll('td')[3];
+                totalExpense += parseFloat(expenseCell.textContent) || 0;
+                totalIncome += parseFloat(incomeCell.textContent) || 0;
+            });
+            document.getElementById('totalExpense').textContent = totalExpense;
+            document.getElementById('totalIncome').textContent = totalIncome;
+            document.getElementById('totalAmount').textContent = totalIncome + totalExpense;
+        }
+    </script>
+</body>
+</html>

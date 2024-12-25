@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    {% load static %}
+    <style>
+        * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: url('{% static "img/background3.jpg" %}') no-repeat;
+    background-size: cover;
+}
+
+.navbar {
+    overflow: hidden;
+    background-color: #333;
+  }
+  .navbar a {
+    float: left;
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 20px;
+    text-decoration: none;
+  }
+  .navbar a:hover {
+    background-color: #ddd;
+    color: black;
+  }
+  
+h2 {
+    margin: 20px 0;
+}
+
+.container {
+    width: 350px;
+    margin: 30px auto;
+}
+
+h1 {
+    letter-spacing: 1px;
+}
+
+.inc-exp-container {
+    display: flex;
+    justify-content: space-between;
+    margin: 20px 0;
+    padding: 20px;
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.inc-exp-container>div {
+    flex: 1;
+    text-align: center;
+}
+
+.inc-exp-container>div:first-of-type {
+    border-right: 1px solid #dedede;
+}
+
+.money {
+    font-size: 20px;
+    letter-spacing: 1px;
+    margin: 5px 0;
+}
+
+.money-ld {
+    color: #2ecc71;
+}
+
+.money-rd {
+    color: #c0392b;
+}
+
+h3 {
+    margin: 40px 0 10px;
+    padding-bottom: 10px;
+    border-bottom: 1px #bbb solid;
+}
+
+label {
+    display: inline-block;
+    margin: 10px 0;
+}
+
+input {
+    border: 1px #dedede solid;
+    width: 100%;
+    font-size: 16px;
+    padding: 10px;
+}
+
+.btn {
+    width: 100%;
+    background-color: #9c88ff;
+    border: 0;
+    padding: 10px;
+    margin: 10px 0 30px;
+    color: #fff;
+    font-size: 16px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+}
+
+.list {
+    list-style: none;
+    margin-bottom: 40px;
+}
+
+.list li {
+    background-color: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+    color: #333;
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+.list li.plus {
+    border-right: 5px solid #2ecc71;
+}
+
+.list li.minus {
+    border-right: 5px solid #c0392b;
+}
+
+#delete-btn {
+    cursor: pointer;
+    background-color: #e74c3c;
+    border: 0;
+    color: white;
+    font-size: 20px;
+    line-height: 20px;
+    padding: 2px 5px;
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translate(-100%, -50%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.list li:hover #delete-btn {
+    opacity: 1;
+}
+
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <a href="#home">Home</a>
+        <a href="/enroll/">Register</a>
+        <a href="/chart/">Visualization</a>
+      </div>
+    <body>
+        <h2>Expense Tracker</h2>
+        <div class="container">
+            <h4>YOUR BALANCE</h4>
+            <h1 id="balance">${{ balance | floatformat:2 }}</h1>
+            <div class="inc-exp-container">
+                <div class="income">
+                    <h4>INCOME</h4>
+                    <p class="money money-ld">${{ income_sum | floatformat:2 }}</p>
+                </div>
+                <div class="expense">
+                    <h4>EXPENSE</h4>
+                    <p class="money money-rd">${{ expense_sum | floatformat:2 }}</p>
+                </div>
+            </div>
+            <h3><a href="/history/">History</a></h3>
+            <ul id="list" class="list">
+                
+            </ul>
+            <h3>Add new transaction</h3>
+            <form class="form" action="/index/" method="POST">
+                {% csrf_token %}
+                <div class="form-tb">
+                    <label for="text">Type</label>
+                     <select name = "type" class="type-select" required>
+                        {% for item in type_choice %}
+                            <option value="{{item.0}}">{{item.1}}</option>
+                        {% endfor %}
+                    </select>
+
+                </div>
+                <div class="form-db">
+                    <label for="amount">AmountAmount <br /></label>
+                    <input type="number" placeholder="Enter amount..." id="amount" name="expand">
+                    <select class="type-select" name="way" required>
+                        {% for item in way_choice %}
+                            <option value="{{item.0}}">{{item.1}}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-date">
+                    <label for="date">Date</label>
+                    <input type="date" id="date" name="date" required>
+                </div>
+                <button class="btn">Add transaction</button>
+            </form>
+        </div>
+        <script src="scrips.js"></script>
+    </body>
+    
+</body>
+</html>
